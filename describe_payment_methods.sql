@@ -1,0 +1,1 @@
+\d payment_methods

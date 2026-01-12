@@ -32,6 +32,7 @@ public class Student {
     private String email;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
 
     @Transient

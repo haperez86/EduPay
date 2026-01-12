@@ -30,5 +30,6 @@ public class Course {
     private BigDecimal price;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
 }

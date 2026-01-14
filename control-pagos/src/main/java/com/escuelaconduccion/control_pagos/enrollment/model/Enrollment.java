@@ -36,8 +36,10 @@ public class Enrollment {
     private BigDecimal totalAmount;
 
     @Column(nullable = false, precision = 10, scale = 2)
+    @Builder.Default
     private BigDecimal paidAmount = BigDecimal.ZERO;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
 }

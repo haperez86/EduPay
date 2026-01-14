@@ -1,0 +1,67 @@
+# Dockerfile optimizado para producción AWS EC2
+# Escuela de Conducción - Sistema de Pagos
+
+# Stage 1: Build frontend y backend
+FROM eclipse-temurin:17-jdk-alpine AS build
+
+WORKDIR /workspace
+
+# Install Node.js for frontend build
+RUN apk add --no-cache nodejs npm
+
+# Copy both projects
+COPY control-pagos/ ./control-pagos/
+COPY payment-portal-pro/ ./payment-portal-pro/
+
+# Build frontend first
+WORKDIR /workspace/payment-portal-pro
+RUN npm ci --only=production && npm run build
+
+# Build backend with Maven
+WORKDIR /workspace/control-pagos
+RUN chmod +x mvnw && \
+    ./mvnw clean package -DskipTests -Dspring.profiles.active=prod
+
+# Stage 2: Runtime optimizado
+FROM eclipse-temurin:17-jre-alpine
+
+# Install required packages for production
+RUN apk add --no-cache \
+    curl \
+    tzdata \
+    && rm -rf /var/cache/apk/*
+
+# Set timezone
+ENV TZ=America/El_Salvador
+
+# Create application user
+RUN addgroup -g 1000 appgroup && \
+    adduser -u 1000 -G appgroup -s /bin/sh -D appuser
+
+WORKDIR /app
+
+# Copy JAR from build stage
+COPY --from=build /workspace/control-pagos/target/control-pagos-*.jar /app/app.jar
+
+# Copy frontend build for static serving (optional)
+COPY --from=build /workspace/payment-portal-pro/dist /app/static
+
+# Create logs directory
+RUN mkdir -p /app/logs && \
+    chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/api/health || exit 1
+
+# Expose port
+EXPOSE 8080
+
+# JVM optimizations for production
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+OptimizeStringConcat"
+
+# Run application
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

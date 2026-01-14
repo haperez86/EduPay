@@ -1,0 +1,17 @@
+[Unit]
+Description=Control Pagos - Escuela de Conduccion
+After=syslog.target network.target postgresql.service
+
+[Service]
+Type=simple
+User=control-pagos
+Group=control-pagos
+ExecStart=/usr/bin/java -jar /opt/control-pagos/app.jar
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/var/log/control-pagos/service.log
+StandardError=append:/var/log/control-pagos/service.log
+
+[Install]
+WantedBy=multi-user.target

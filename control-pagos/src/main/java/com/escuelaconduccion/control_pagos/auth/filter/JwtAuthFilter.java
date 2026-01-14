@@ -25,6 +25,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
     @Override
     protected void doFilterInternal(
@@ -57,6 +58,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         userDetailsService.loadUserByUsername(username);
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
+                    
+                    log.info("Usuario: {} | Authorities: {} | Path: {}", 
+                            username, userDetails.getAuthorities(), request.getServletPath());
 
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
@@ -76,7 +80,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
 
         } catch (Exception e) {
-            Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
             log.error("JWT error: {}", e.getMessage());
         }
 

@@ -9,12 +9,14 @@ import {
   FileBarChart,
   LogOut,
   GraduationCap,
+  Building,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/branches', label: 'Sedes', icon: Building, roles: ['SUPER_ADMIN'] },
   { path: '/students', label: 'Estudiantes', icon: Users },
   { path: '/courses', label: 'Cursos', icon: BookOpen },
   { path: '/enrollments', label: 'Inscripciones', icon: ClipboardList },
@@ -23,8 +25,14 @@ const menuItems = [
 ];
 
 export const Sidebar: React.FC = () => {
-  const { logout, user } = useAuth();
+  const { logout, user, isSuperAdmin } = useAuth();
   const location = useLocation();
+
+  // Filter menu items based on user role
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!item.roles) return true; // Show to all users
+    return item.roles.includes(user?.role || '');
+  });
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar flex flex-col z-50">
@@ -44,7 +52,7 @@ export const Sidebar: React.FC = () => {
       {/* Navigation */}
       <nav className="flex-1 py-6 overflow-y-auto scrollbar-thin">
         <ul className="space-y-1">
-          {menuItems.map((item) => {
+          {filteredMenuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <li key={item.path}>
@@ -76,7 +84,10 @@ export const Sidebar: React.FC = () => {
             <p className="text-sm font-medium text-sidebar-foreground truncate">
               {user?.username || 'Usuario'}
             </p>
-            <p className="text-xs text-sidebar-foreground/60">Administrador</p>
+            <p className="text-xs text-sidebar-foreground/60">
+              {user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 
+               user?.role === 'ADMIN' ? 'Administrador' : 'Estudiante'}
+            </p>
           </div>
           <button
             onClick={logout}

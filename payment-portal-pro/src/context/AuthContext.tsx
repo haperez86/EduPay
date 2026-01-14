@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
-import { User, LoginRequest, RegisterRequest, LoginResponse } from '@/types/models';
+import { User, LoginRequest, RegisterRequest, LoginResponse, Branch } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -11,6 +11,10 @@ interface AuthContextType {
   register: (data: RegisterRequest) => Promise<boolean>;
   logout: () => void;
   fetchWithAuth: (endpoint: string, options?: RequestInit) => Promise<Response>;
+  isSuperAdmin: () => boolean;
+  isAdmin: () => boolean;
+  isStudent: () => boolean;
+  getCurrentBranch: () => Branch | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,7 +33,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     if (storedToken && storedUser) {
       setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+      } catch (error) {
+        console.error('Error parsing stored user data:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('jwt_token');
+      }
     }
     setIsLoading(false);
   }, []);
@@ -53,14 +64,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const data: LoginResponse = await response.json();
       
       localStorage.setItem('jwt_token', data.token);
-      localStorage.setItem('user', JSON.stringify({ username: credentials.username }));
+      localStorage.setItem('user', JSON.stringify(data.user));
       
       setToken(data.token);
-      setUser({ username: credentials.username });
+      setUser(data.user);
       
       toast({
         title: "¡Bienvenido!",
-        description: `Has iniciado sesión como ${credentials.username}`,
+        description: `Has iniciado sesión como ${data.user.username}${data.user.branch ? ` - ${data.user.branch.name}` : ''}`,
       });
       
       return true;
@@ -141,6 +152,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return response;
   }, [logout]);
 
+  const isSuperAdmin = useCallback(() => {
+    return user?.role === 'SUPER_ADMIN';
+  }, [user]);
+
+  const isAdmin = useCallback(() => {
+    return user?.role === 'ADMIN';
+  }, [user]);
+
+  const isStudent = useCallback(() => {
+    return user?.role === 'STUDENT';
+  }, [user]);
+
+  const getCurrentBranch = useCallback(() => {
+    return user?.branch || null;
+  }, [user]);
+
   const value = useMemo(() => ({
     user,
     token,
@@ -150,7 +177,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     register,
     logout,
     fetchWithAuth,
-  }), [user, token, isLoading, login, register, logout, fetchWithAuth]);
+    isSuperAdmin,
+    isAdmin,
+    isStudent,
+    getCurrentBranch,
+  }), [user, token, isLoading, login, register, logout, fetchWithAuth, isSuperAdmin, isAdmin, isStudent, getCurrentBranch]);
 
   return (
     <AuthContext.Provider value={value}>

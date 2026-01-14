@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useBranch } from '@/context/BranchContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ButtonLoader } from '@/components/ui/LoadingSpinner';
-import { GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { GraduationCap, Eye, EyeOff, Building } from 'lucide-react';
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -14,8 +15,15 @@ const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [selectedRole, setSelectedRole] = useState('ADMIN');
+  const [selectedBranch, setSelectedBranch] = useState('');
   const { register } = useAuth();
+  const { branches, fetchBranches } = useBranch();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchBranches();
+  }, [fetchBranches]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +44,18 @@ const Register: React.FC = () => {
       return;
     }
 
+    if (!selectedBranch) {
+      setError('Debe seleccionar una sede para el rol de administrador');
+      return;
+    }
+
     setIsSubmitting(true);
-    const success = await register({ username, password });
+    const success = await register({ 
+      username, 
+      password, 
+      role: selectedRole,
+      branchId: parseInt(selectedBranch)
+    });
     setIsSubmitting(false);
 
     if (success) {
@@ -92,6 +110,46 @@ const Register: React.FC = () => {
                 required
                 className="h-11"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role">Rol</Label>
+              <select
+                id="role"
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                className="w-full h-11 px-3 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              >
+                <option value="ADMIN">Administrador de Sede</option>
+                <option value="SUPER_ADMIN">Super Administrador</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="branch">
+                <Building className="w-4 h-4 inline mr-2" />
+                Sede
+              </Label>
+              {branches.length === 0 ? (
+                <div className="text-sm text-gray-500 p-2 border border-gray-200 rounded">
+                  No hay sedes disponibles. Por favor, ejecute los scripts SQL para crear las sedes primero.
+                </div>
+              ) : (
+                <select
+                  id="branch"
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  className="w-full h-11 px-3 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  required
+                >
+                  <option value="">Selecciona una sede</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name} {branch.isMain && '(Principal)'}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="space-y-2">

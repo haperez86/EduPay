@@ -20,7 +20,7 @@ public class CustomUserDetailsService implements UserDetailsService {
             throws UsernameNotFoundException {
 
         User user = userRepository
-                .findByUsernameAndActiveTrue(username)
+                .findByUsernameAndActiveTrueWithBranch(username)
                 .orElseThrow(() ->
                         new UsernameNotFoundException("Usuario no encontrado"));
 

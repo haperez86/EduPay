@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { BranchProvider } from "@/context/BranchContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { MainLayout } from "@/components/layout/MainLayout";
 
@@ -15,6 +16,7 @@ import Courses from "@/pages/Courses";
 import Enrollments from "@/pages/Enrollments";
 import Payments from "@/pages/Payments";
 import Reports from "@/pages/Reports";
+import Branches from "@/pages/Branches";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,33 +28,36 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+          <BranchProvider>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* Protected routes */}
-            <Route
-              element={
-                <ProtectedRoute>
-                  <MainLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/students" element={<Students />} />
-              <Route path="/courses" element={<Courses />} />
-              <Route path="/enrollments" element={<Enrollments />} />
-              <Route path="/payments" element={<Payments />} />
-              <Route path="/reports" element={<Reports />} />
-            </Route>
+              {/* Protected routes */}
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <MainLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/branches" element={<Branches />} />
+                <Route path="/students" element={<Students />} />
+                <Route path="/courses" element={<Courses />} />
+                <Route path="/enrollments" element={<Enrollments />} />
+                <Route path="/payments" element={<Payments />} />
+                <Route path="/reports" element={<Reports />} />
+              </Route>
 
-            {/* Redirects */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* Redirects */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              
+              {/* Catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BranchProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

@@ -1,7 +1,10 @@
 package com.escuelaconduccion.control_pagos.auth.model;
 
+import com.escuelaconduccion.control_pagos.branch.model.Branch;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -16,6 +19,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
+
     @Column(nullable = false, unique = true)
     private String username;
 
@@ -23,8 +30,22 @@ public class User {
     private String password;
 
     @Column(nullable = false)
-    private String role; // ROLE_ADMIN
+    private String role; // SUPER_ADMIN, ADMIN, STUDENT
 
     @Column(nullable = false)
-    private Boolean active;
+    @Builder.Default
+    private Boolean active = true;
+
+    @Column
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(nullable = true) // updated_at is now nullable
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

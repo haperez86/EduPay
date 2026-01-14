@@ -1,8 +1,26 @@
+export interface Branch {
+  id: number;
+  code: string;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  isMain: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface User {
   id?: number;
   username: string;
   password?: string;
-  role?: string;
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'STUDENT';
+  branch?: Branch;
+  branchId?: number;
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Student {
@@ -58,12 +76,14 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
+  user: User;
 }
 
 export interface RegisterRequest {
   username: string;
   password: string;
   role?: string;
+  branchId?: number;
 }
 
 export interface FinancialStatus {

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,10 +19,15 @@ public class CourseService {
 
     public CourseResponseDTO create(CourseRequestDTO request) {
 
+        // Verificar si ya existe un curso con el mismo nombre
+        if (courseRepository.existsByNameIgnoreCase(request.getName())) {
+            throw new RuntimeException("Ya existe un curso con el nombre: " + request.getName());
+        }
+
         Course course = Course.builder()
                 .name(request.getName())
                 .description(request.getDescription())
-                .price(request.getPrice())
+                .price(request.getPrice() != null ? request.getPrice() : java.math.BigDecimal.ZERO)
                 .totalHours(request.getTotalHours())
                 .active(true)
                 .build();
@@ -78,10 +84,16 @@ public class CourseService {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
 
+        // Verificar si el nuevo nombre ya existe en otro curso
+        Optional<Course> existingCourse = courseRepository.findByNameIgnoreCase(request.getName());
+        if (existingCourse.isPresent() && !existingCourse.get().getId().equals(id)) {
+            throw new RuntimeException("Ya existe otro curso con el nombre: " + request.getName());
+        }
+
         course.setName(request.getName());
-        course.setDescription(request.getDescription());  // AGREGA ESTO
-        course.setPrice(request.getPrice());
-        course.setTotalHours(request.getTotalHours());    // AGREGA ESTO
+        course.setDescription(request.getDescription());
+        course.setPrice(request.getPrice() != null ? request.getPrice() : java.math.BigDecimal.ZERO);
+        course.setTotalHours(request.getTotalHours());
         course.setActive(request.getActive() != null ? request.getActive() : course.getActive());
 
         courseRepository.save(course);

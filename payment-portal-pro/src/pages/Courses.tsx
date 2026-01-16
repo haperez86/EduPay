@@ -392,11 +392,16 @@ const Courses: React.FC = () => {
                     id="price"
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="1000"
                     value={formData.price}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const numValue = value === '' ? 0 : parseFloat(value) || 0;
+                      setFormData({ 
+                        ...formData, 
+                        price: numValue
+                      });
+                    }}
                     required
                   />
                 </div>

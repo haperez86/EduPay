@@ -12,4 +12,9 @@ public class CourseRequestDTO {
     private BigDecimal price;
     private Integer totalHours;
     private Boolean active;
+    
+    // Asegurar que el precio nunca sea null
+    public BigDecimal getPrice() {
+        return price != null ? price : BigDecimal.ZERO;
+    }
 }

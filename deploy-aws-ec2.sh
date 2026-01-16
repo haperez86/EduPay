@@ -87,7 +87,7 @@ if [ -d "$APP_DIR/.git" ]; then
     git pull origin main
 else
     log_info "Clonando repositorio..."
-    git clone <YOUR_REPO_URL> $APP_DIR
+    git clone https://github.com/haperez86/EduPay.git $APP_DIR
     cd $APP_DIR
 fi
 
@@ -96,6 +96,12 @@ log_info "Construyendo aplicación..."
 cd $APP_DIR/control-pagos
 chmod +x mvnw
 ./mvnw clean package -DskipTests
+
+# 8.1 Construir frontend
+log_info "Construyendo frontend React..."
+cd $APP_DIR/payment-portal-pro
+npm ci
+npm run build
 
 # 9. Configurar application.properties para producción
 log_info "Configurando application.properties..."

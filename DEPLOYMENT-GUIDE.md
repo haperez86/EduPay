@@ -28,7 +28,8 @@ EC2 (Ubuntu 22.04)
 
 ## 📂 Archivos de Configuración Creados
 
-- `deploy-aws-ec2.sh` - Script de despliegue automatizado
+- `deploy-aws-ec2.sh` - Script de despliegue automatizado completo
+- `deploy-quick.sh` - Script de actualización rápida para producción
 - `nginx-config.conf` - Configuración NGINX
 - `control-pagos.service` - Servicio systemd
 - `Dockerfile.production` - Docker optimizado para producción
@@ -64,15 +65,23 @@ ssh -i your-key-pair.pem ubuntu@your-ec2-public-ip
 ### 3. Ejecutar Script de Despliegue
 
 ```bash
-# 3.1 Clonar tu repositorio
-git clone <YOUR_REPO_URL> /opt/control-pagos
-cd /opt/control-pagos
-
-# 3.2 Hacer ejecutable el script
+# 3.1 Descargar script directamente desde GitHub
+wget https://raw.githubusercontent.com/haperez86/EduPay/main/deploy-aws-ec2.sh
 chmod +x deploy-aws-ec2.sh
 
-# 3.3 Ejecutar despliegue (como root)
+# 3.2 Ejecutar despliegue (como root)
 sudo ./deploy-aws-ec2.sh
+```
+
+### 3.1 Opción: Despliegue Rápido (si ya existe el servidor)
+
+```bash
+# Descargar script rápido
+wget https://raw.githubusercontent.com/haperez86/EduPay/main/deploy-quick.sh
+chmod +x deploy-quick.sh
+
+# Ejecutar actualización rápida
+sudo ./deploy-quick.sh
 ```
 
 ### 4. Configuración Manual (si el script falla)
@@ -124,12 +133,29 @@ curl http://localhost:8080/api/health
 
 # Probar frontend
 curl http://localhost/
+
+# Obtener IP pública
+curl ifconfig.me
 ```
 
 ## 🌐 Acceso a la Aplicación
 
 - **URL Pública**: `http://your-ec2-public-ip`
 - **API Endpoints**: `http://your-ec2-public-ip/api/*`
+- **Login inicial**: 
+  - Usuario: `admin`
+  - Contraseña: `admin123` (cambiar después)
+
+## 📱 Verificación Post-Despliegue
+
+1. **Acceder al frontend**: `http://your-ec2-public-ip`
+2. **Probar login**: Con credenciales por defecto
+3. **Verificar funcionalidades**:
+   - Dashboard con estadísticas
+   - Gestión de estudiantes
+   - Sistema de pagos
+   - Multisede (si SUPER_ADMIN)
+4. **Verificar responsive**: Probar en móvil y desktop
 
 ## 🔐 Seguridad Adicional
 

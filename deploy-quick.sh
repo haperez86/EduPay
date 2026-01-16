@@ -40,6 +40,7 @@ git pull origin main
 # 2. Construir backend
 log_info "Construyendo backend Spring Boot..."
 cd control-pagos
+chmod +x mvnw
 ./mvnw clean package -DskipTests -Dspring.profiles.active=prod
 
 # 3. Construir frontend

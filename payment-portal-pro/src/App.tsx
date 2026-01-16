@@ -16,6 +16,7 @@ import Courses from "@/pages/Courses";
 import Enrollments from "@/pages/Enrollments";
 import Payments from "@/pages/Payments";
 import Reports from "@/pages/Reports";
+import MonthlyReports from "@/pages/MonthlyReports";
 import Branches from "@/pages/Branches";
 import NotFound from "@/pages/NotFound";
 
@@ -49,6 +50,7 @@ const App = () => (
                 <Route path="/enrollments" element={<Enrollments />} />
                 <Route path="/payments" element={<Payments />} />
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/reports/monthly-income" element={<MonthlyReports />} />
               </Route>
 
               {/* Redirects */}

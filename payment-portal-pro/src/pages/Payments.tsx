@@ -93,7 +93,7 @@ const Payments: React.FC = () => {
       ]);
       setPayments(paymentsData);
       setEnrollments(enrollmentsData.filter((e) => e.active));
-      setStudents(studentsData);
+      setStudents(studentsData); // Cargar todos los estudiantes (activos e inactivos) para mostrar info histórica
       setCourses(coursesData);
       setPaymentMethods(methodsData);
     } catch (error) {
@@ -106,6 +106,24 @@ const Payments: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const selectedEnrollment = enrollments.find(e => e.id === formData.enrollmentId);
+  const pendingAmount = selectedEnrollment 
+    ? selectedEnrollment.totalAmount - selectedEnrollment.paidAmount 
+    : 0;
+
+  // Auto-completar monto cuando se selecciona PAGO_TOTAL, limpiar cuando es ABONO
+  useEffect(() => {
+    if (selectedEnrollment) {
+      if (formData.type === 'PAGO_TOTAL') {
+        const remaining = selectedEnrollment.totalAmount - selectedEnrollment.paidAmount;
+        setFormData(prev => ({ ...prev, amount: remaining }));
+      } else if (formData.type === 'ABONO') {
+        // Limpiar el monto cuando se cambia a ABONO para que el usuario ingrese el valor
+        setFormData(prev => ({ ...prev, amount: 0 }));
+      }
+    }
+  }, [formData.type, selectedEnrollment]);
 
   // Aplicar filtros y ordenamiento
   useEffect(() => {
@@ -155,11 +173,6 @@ const Payments: React.FC = () => {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
-
-  const selectedEnrollment = enrollments.find(e => e.id === formData.enrollmentId);
-  const pendingAmount = selectedEnrollment 
-    ? selectedEnrollment.totalAmount - selectedEnrollment.paidAmount 
-    : 0;
 
   const getEnrollmentLabel = (enrollmentId: number) => {
     const enrollment = enrollments.find((e) => e.id === enrollmentId);

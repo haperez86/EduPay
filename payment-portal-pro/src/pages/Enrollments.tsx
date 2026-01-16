@@ -71,7 +71,7 @@ const Enrollments: React.FC = () => {
         get<Course[]>('/courses'),
       ]);
       setEnrollments(enrollmentsData);
-      setStudents(studentsData.filter((s) => s.active));
+      setStudents(studentsData); // Cargar todos los estudiantes (activos e inactivos) para mostrar info histórica
       setCourses(coursesData.filter((c) => c.active));
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -526,7 +526,7 @@ const Enrollments: React.FC = () => {
                     <SelectValue placeholder="Selecciona un estudiante" />
                   </SelectTrigger>
                   <SelectContent>
-                    {students.map((student) => (
+                    {students.filter((student) => student.active).map((student) => (
                       <SelectItem key={student.id} value={student.id.toString()}>
                         {student.firstName} {student.lastName} - {student.documentNumber}
                       </SelectItem>

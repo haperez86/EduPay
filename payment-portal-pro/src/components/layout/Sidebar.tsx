@@ -22,6 +22,13 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+interface MenuItem {
+  path: string;
+  label: string;
+  icon: any;
+  roles?: string[];
+}
+
 const menuItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/branches', label: 'Sedes', icon: Building, roles: ['SUPER_ADMIN'] },
@@ -29,7 +36,8 @@ const menuItems = [
   { path: '/courses', label: 'Cursos', icon: BookOpen },
   { path: '/enrollments', label: 'Inscripciones', icon: ClipboardList },
   { path: '/payments', label: 'Pagos', icon: CreditCard },
-  { path: '/reports', label: 'Reportes', icon: FileBarChart },
+  { path: '/reports', label: 'Reportes Administrativos', icon: FileBarChart },
+  { path: '/reports/monthly-income', label: 'Ingresos Mensuales', icon: TrendingUp },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {

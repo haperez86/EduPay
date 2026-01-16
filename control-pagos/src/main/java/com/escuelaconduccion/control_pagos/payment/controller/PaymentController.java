@@ -1,5 +1,6 @@
 package com.escuelaconduccion.control_pagos.payment.controller;
 
+import com.escuelaconduccion.control_pagos.payment.dto.MonthlyIncomeDTO;
 import com.escuelaconduccion.control_pagos.payment.dto.PaymentRequestDTO;
 import com.escuelaconduccion.control_pagos.payment.dto.PaymentResponseDTO;
 import com.escuelaconduccion.control_pagos.payment.service.PaymentService;
@@ -57,5 +58,19 @@ public class PaymentController {
         response.put("message", "Pago anulado correctamente");
         
         return ResponseEntity.ok(response);
+    }
+
+    // 📊 Endpoint para reportes mensuales de ingresos
+    @GetMapping("/monthly-income")
+    public List<MonthlyIncomeDTO> getMonthlyIncomeReport(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Long branchId  // Solo para SUPER_ADMIN
+    ) {
+        // Si no se especifica año, usar el año actual
+        if (year == null) {
+            year = java.time.Year.now().getValue();
+        }
+        
+        return paymentService.getMonthlyIncomeReport(year, branchId);
     }
 }

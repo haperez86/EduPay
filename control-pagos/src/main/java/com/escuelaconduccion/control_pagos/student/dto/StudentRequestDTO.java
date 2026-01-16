@@ -11,4 +11,5 @@ public class StudentRequestDTO {
     private String email;
     private String phone;
     private Boolean active;
+    private Long branchId;
 }

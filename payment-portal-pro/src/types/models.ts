@@ -31,6 +31,11 @@ export interface Student {
   email: string;
   phone: string;
   active: boolean;
+  branchId?: number;
+  branch?: Branch;
+  fechaRegistro?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Course {

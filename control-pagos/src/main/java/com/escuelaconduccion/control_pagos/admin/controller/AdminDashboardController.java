@@ -16,4 +16,9 @@ public class AdminDashboardController {
     public DashboardDTO getDashboard() {
         return dashboardService.getDashboard();
     }
+
+    @GetMapping("/dashboard/{branchId}")
+    public DashboardDTO getDashboardByBranch(@PathVariable Long branchId) {
+        return dashboardService.getDashboardByBranch(branchId);
+    }
 }

@@ -13,4 +13,6 @@ public class StudentListDTO {
     private String email;           // Agregar email (opcional)
     private String phone;           // Agregar phone (opcional)
     private Boolean active;
+    private Long branchId;
+    private String branchName;
 }

@@ -19,9 +19,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useApi } from '@/hooks/useApi';
-import { Student, CreateStudentDTO } from '@/types/models';
+import { Student, CreateStudentDTO, Branch } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, UserX, Search, UserCheck, Filter, X } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useBranch } from '@/context/BranchContext';
+import { Plus, Edit, UserX, Search, UserCheck, Filter, X, Building } from 'lucide-react';
 import { ButtonLoader, PageLoader } from '@/components/ui/LoadingSpinner';
 
 const initialFormState: CreateStudentDTO = {
@@ -30,6 +32,7 @@ const initialFormState: CreateStudentDTO = {
   documentNumber: '',
   email: '',
   phone: '',
+  branchId: undefined,
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -37,6 +40,8 @@ const ITEMS_PER_PAGE = 10;
 const Students: React.FC = () => {
   const { get, post, put, patch } = useApi();
   const { toast } = useToast();
+  const { user, isSuperAdmin, isAdmin } = useAuth();
+  const { branches, selectedBranch } = useBranch();
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,19 +53,45 @@ const Students: React.FC = () => {
   // Filtros y paginación
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterBranch, setFilterBranch] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchStudents = useCallback(async () => {
     try {
-      const data = await get<Student[]>('/students');
+      let url = '/students?';
+      const params = new URLSearchParams();
+      
+      // Agregar filtros
+      if (filterStatus !== 'all') {
+        params.append('active', filterStatus === 'active' ? 'true' : 'false');
+      }
+      
+      // Para SUPER_ADMIN, permitir filtrar por sede
+      if (isSuperAdmin() && filterBranch !== 'all') {
+        params.append('branchId', filterBranch);
+      }
+      
+      // Para búsqueda por documento
+      if (searchTerm) {
+        params.append('document', searchTerm);
+      }
+      
+      url += params.toString();
+      
+      const data = await get<Student[]>(url);
       setStudents(data);
       setFilteredStudents(data);
     } catch (error) {
       console.error('Error fetching students:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los estudiantes",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [get]);
+  }, [get, filterStatus, filterBranch, searchTerm, isSuperAdmin, toast]);
 
   useEffect(() => {
     fetchStudents();
@@ -105,10 +136,14 @@ const Students: React.FC = () => {
         documentNumber: student.documentNumber,
         email: student.email,
         phone: student.phone,
+        branchId: student.branchId,
       });
     } else {
       setEditingStudent(null);
-      setFormData(initialFormState);
+      setFormData({
+        ...initialFormState,
+        branchId: isAdmin() ? user?.branch?.id : undefined,
+      });
     }
     setIsModalOpen(true);
   };
@@ -179,11 +214,59 @@ const Students: React.FC = () => {
       key: 'name',
       header: 'Nombre Completo',
       render: (student: Student) => (
-        <span className="font-medium">{`${student.firstName} ${student.lastName}`}</span>
+        <div className="min-w-0">
+          <span className="font-medium block truncate">{`${student.firstName} ${student.lastName}`}</span>
+          {student.email && (
+            <span className="text-xs text-muted-foreground truncate block">{student.email}</span>
+          )}
+        </div>
       ),
     },
     { key: 'documentNumber', header: 'Documento' },
-    { key: 'email', header: 'Email' },
+    ...(isSuperAdmin() ? [{
+      key: 'branch',
+      header: 'Sede',
+      render: (student: Student) => {
+        // Intentar obtener el nombre de la sede desde los datos del estudiante
+        if (student.branch?.name) {
+          return (
+            <div className="flex items-center gap-2">
+              <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{student.branch.name}</span>
+              {student.branch.isMain && (
+                <span className="inline-flex items-center gap-1 px-1 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                  Principal
+                </span>
+              )}
+            </div>
+          );
+        }
+        
+        // Si no hay datos de branch en el estudiante, buscar en BranchContext
+        const branch = branches.find(b => b.id === student.branchId);
+        if (branch) {
+          return (
+            <div className="flex items-center gap-2">
+              <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{branch.name}</span>
+              {branch.isMain && (
+                <span className="inline-flex items-center gap-1 px-1 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                  Principal
+                </span>
+              )}
+            </div>
+          );
+        }
+        
+        // Fallback final
+        return (
+          <div className="flex items-center gap-2">
+            <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <span className="truncate">Sede {student.branchId || 'N/A'}</span>
+          </div>
+        );
+      },
+    }] : []),
     { key: 'phone', header: 'Teléfono' },
     {
       key: 'active',
@@ -198,7 +281,7 @@ const Students: React.FC = () => {
       key: 'actions',
       header: 'Acciones',
       render: (student: Student) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -206,7 +289,7 @@ const Students: React.FC = () => {
               e.stopPropagation();
               handleOpenModal(student);
             }}
-            className="text-primary hover:text-primary/80"
+            className="text-primary hover:text-primary/80 p-1 sm:p-2"
           >
             <Edit className="w-4 h-4" />
           </Button>
@@ -217,7 +300,7 @@ const Students: React.FC = () => {
               e.stopPropagation();
               handleToggleActive(student);
             }}
-            className={student.active ? 'text-destructive hover:text-destructive/80' : 'text-success hover:text-success/80'}
+            className={student.active ? 'text-destructive hover:text-destructive/80 p-1 sm:p-2' : 'text-success hover:text-success/80 p-1 sm:p-2'}
           >
             {student.active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
           </Button>
@@ -239,49 +322,49 @@ const Students: React.FC = () => {
     <div className="min-h-screen">
       <Navbar title="Estudiantes" />
 
-      <div className="p-6 animate-fade-in">
+      <div className="p-4 sm:p-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
-            <h1 className="page-header mb-1">Gestión de Estudiantes</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Gestión de Estudiantes</h1>
+            <p className="text-gray-600 text-sm sm:text-base">
               Administra el registro de estudiantes del sistema
             </p>
           </div>
-          <Button onClick={() => handleOpenModal()} className="btn-primary gap-2">
+          <Button onClick={() => handleOpenModal()} className="btn-primary gap-2 w-full sm:w-auto">
             <Plus className="w-4 h-4" />
             Nuevo Estudiante
           </Button>
         </div>
 
         {/* Filtros y Búsqueda */}
-        <div className="bg-card rounded-xl p-4 border border-border mb-6 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-card rounded-xl p-3 sm:p-4 border border-border mb-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium">Filtros</span>
+              <span className="font-medium text-sm sm:text-base">Filtros</span>
             </div>
             {(searchTerm || filterStatus !== 'all') && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-2">
                 <X className="w-4 h-4" />
-                Limpiar filtros
+                <span className="hidden sm:inline">Limpiar</span>
               </Button>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nombre o documento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 text-sm"
               />
             </div>
 
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>
@@ -292,25 +375,27 @@ const Students: React.FC = () => {
             </Select>
           </div>
 
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs sm:text-sm text-muted-foreground">
             Mostrando {paginatedStudents.length} de {filteredStudents.length} estudiantes
           </div>
         </div>
 
         {/* Table */}
-        <DataTable
-          columns={columns}
-          data={paginatedStudents}
-          emptyMessage="No hay estudiantes registrados"
-        />
+        <div className="overflow-x-auto">
+          <DataTable
+            columns={columns}
+            data={paginatedStudents}
+            emptyMessage="No hay estudiantes registrados"
+          />
+        </div>
 
         {/* Paginación */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6">
+            <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
               Página {currentPage} de {totalPages}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 justify-center sm:justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -334,51 +419,54 @@ const Students: React.FC = () => {
 
       {/* Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">
               {editingStudent ? 'Editar Estudiante' : 'Nuevo Estudiante'}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 py-4 px-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">Nombre</Label>
+                  <Label htmlFor="firstName" className="text-sm font-medium">Nombre</Label>
                   <Input
                     id="firstName"
                     value={formData.firstName}
                     onChange={(e) =>
                       setFormData({ ...formData, firstName: e.target.value })
                     }
+                    className="text-sm"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Apellido</Label>
+                  <Label htmlFor="lastName" className="text-sm font-medium">Apellido</Label>
                   <Input
                     id="lastName"
                     value={formData.lastName}
                     onChange={(e) =>
                       setFormData({ ...formData, lastName: e.target.value })
                     }
+                    className="text-sm"
                     required
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="documentNumber">Número de Documento</Label>
+                <Label htmlFor="documentNumber" className="text-sm font-medium">Número de Documento</Label>
                 <Input
                   id="documentNumber"
                   value={formData.documentNumber}
                   onChange={(e) =>
                     setFormData({ ...formData, documentNumber: e.target.value })
                   }
+                  className="text-sm"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -386,26 +474,61 @@ const Students: React.FC = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
+                  className="text-sm"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono</Label>
+                <Label htmlFor="phone" className="text-sm font-medium">Teléfono</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
                   onChange={(e) =>
                     setFormData({ ...formData, phone: e.target.value })
                   }
+                  className="text-sm"
                   required
                 />
               </div>
+              
+              {/* Campo de Sede - para SUPER_ADMIN (editable) y ADMIN (solo lectura) */}
+              {(isSuperAdmin() || isAdmin()) && (
+                <div className="space-y-2">
+                  <Label htmlFor="branchId" className="text-sm font-medium">Sede</Label>
+                  <Select
+                    value={formData.branchId?.toString() || (isAdmin() ? user?.branch?.id?.toString() : '')}
+                    onValueChange={(value) =>
+                      isSuperAdmin() && setFormData({ ...formData, branchId: value ? parseInt(value) : undefined })
+                    }
+                    disabled={!isSuperAdmin()}
+                  >
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Seleccionar sede" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branches.map((branch) => (
+                        <SelectItem key={branch.id} value={branch.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <Building className="w-4 h-4" />
+                            <span className="truncate">{branch.name}</span>
+                            {branch.isMain && (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                                Principal
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseModal}>
+            <DialogFooter className="flex flex-col sm:flex-row gap-3">
+              <Button type="button" variant="outline" onClick={handleCloseModal} className="w-full sm:w-auto">
                 Cancelar
               </Button>
-              <Button type="submit" className="btn-primary" disabled={isSubmitting}>
+              <Button type="submit" className="btn-primary w-full sm:w-auto" disabled={isSubmitting}>
                 {isSubmitting ? <ButtonLoader /> : editingStudent ? 'Actualizar' : 'Crear'}
               </Button>
             </DialogFooter>

@@ -54,12 +54,16 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <div className={cn('stat-card', styles.bg)}>
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <p className="text-xs font-medium text-muted-foreground mb-1 leading-tight">{title}</p>
+          <p className="text-lg sm:text-2xl font-bold text-foreground leading-tight break-words" title={typeof value === 'string' ? value : String(value)}>
+            {typeof value === 'string' && value.length > 12 
+              ? `${value.slice(0, 10)}...` 
+              : value}
+          </p>
           {subtitle && (
-            <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+            <p className="text-xs text-muted-foreground mt-1 leading-tight truncate">{subtitle}</p>
           )}
           {trend && (
             <div className="flex items-center gap-1 mt-2">
@@ -71,12 +75,12 @@ export const StatCard: React.FC<StatCardProps> = ({
               >
                 {trend.isPositive ? '+' : '-'}{Math.abs(trend.value)}%
               </span>
-              <span className="text-xs text-muted-foreground">vs mes anterior</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">vs mes anterior</span>
             </div>
           )}
         </div>
-        <div className={cn('p-3 rounded-xl', styles.iconBg)}>
-          <Icon className={cn('w-6 h-6', styles.iconColor)} />
+        <div className={cn('p-2 sm:p-3 rounded-xl flex-shrink-0', styles.iconBg)}>
+          <Icon className={cn('w-4 h-4 sm:w-6 sm:h-6', styles.iconColor)} />
         </div>
       </div>
     </div>

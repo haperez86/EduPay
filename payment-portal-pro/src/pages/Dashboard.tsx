@@ -201,15 +201,15 @@ const Dashboard: React.FC = () => {
     return (
       <div className="min-h-screen">
         <Navbar title={getDashboardTitle()} />
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Branch Info Card */}
           <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Building className="h-5 w-5" />
-                {user.branch.name}
+                <span className="truncate">{user.branch.name}</span>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 {user.branch.isMain && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full mr-2">
                     <CheckCircle className="w-3 h-3" />
@@ -220,23 +220,23 @@ const Dashboard: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                 {user.branch.address && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-gray-500" />
-                    <span>{user.branch.address}</span>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                    <span className="line-clamp-2">{user.branch.address}</span>
                   </div>
                 )}
                 {user.branch.phone && (
                   <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-500" />
-                    <span>{user.branch.phone}</span>
+                    <Phone className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                    <span className="truncate">{user.branch.phone}</span>
                   </div>
                 )}
                 {user.branch.email && (
                   <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-gray-500" />
-                    <span>{user.branch.email}</span>
+                    <Mail className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                    <span className="truncate">{user.branch.email}</span>
                   </div>
                 )}
               </div>
@@ -244,106 +244,106 @@ const Dashboard: React.FC = () => {
           </Card>
 
           {/* Quick Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Estudiantes</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">Estudiantes</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalStudents}</div>
+                <div className="text-xl sm:text-2xl font-bold">{stats.totalStudents}</div>
                 <p className="text-xs text-muted-foreground">En tu sede</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Cursos</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">Cursos</CardTitle>
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalCourses}</div>
+                <div className="text-xl sm:text-2xl font-bold">{stats.totalCourses}</div>
                 <p className="text-xs text-muted-foreground">Disponibles</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Inscripciones</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">Inscripciones</CardTitle>
                 <ClipboardList className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalEnrollments}</div>
+                <div className="text-xl sm:text-2xl font-bold">{stats.totalEnrollments}</div>
                 <p className="text-xs text-muted-foreground">Activas</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pagos</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">Pagos</CardTitle>
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalPayments}</div>
+                <div className="text-xl sm:text-2xl font-bold">{stats.totalPayments}</div>
                 <p className="text-xs text-muted-foreground">Este mes</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Management Modules */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Estudiantes
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="truncate">Estudiantes</span>
                 </CardTitle>
-                <CardDescription>Gestionar estudiantes de tu sede</CardDescription>
+                <CardDescription className="text-xs">Gestionar estudiantes de tu sede</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Link to="/students" className="text-blue-600 hover:text-blue-800 text-sm">
+              <CardContent className="pt-0">
+                <Link to="/students" className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm">
                   Ver estudiantes →
                 </Link>
               </CardContent>
             </Card>
 
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  Cursos
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="truncate">Cursos</span>
                 </CardTitle>
-                <CardDescription>Administrar cursos disponibles</CardDescription>
+                <CardDescription className="text-xs">Administrar cursos disponibles</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Link to="/courses" className="text-blue-600 hover:text-blue-800 text-sm">
+              <CardContent className="pt-0">
+                <Link to="/courses" className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm">
                   Ver cursos →
                 </Link>
               </CardContent>
             </Card>
 
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ClipboardList className="h-5 w-5" />
-                  Inscripciones
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="truncate">Inscripciones</span>
                 </CardTitle>
-                <CardDescription>Gestionar inscripciones activas</CardDescription>
+                <CardDescription className="text-xs">Gestionar inscripciones activas</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Link to="/enrollments" className="text-blue-600 hover:text-blue-800 text-sm">
+              <CardContent className="pt-0">
+                <Link to="/enrollments" className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm">
                   Ver inscripciones →
                 </Link>
               </CardContent>
             </Card>
 
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Pagos
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="truncate">Pagos</span>
                 </CardTitle>
-                <CardDescription>Control de pagos y finanzas</CardDescription>
+                <CardDescription className="text-xs">Control de pagos y finanzas</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Link to="/payments" className="text-blue-600 hover:text-blue-800 text-sm">
+              <CardContent className="pt-0">
+                <Link to="/payments" className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm">
                   Ver pagos →
                 </Link>
               </CardContent>
@@ -359,51 +359,51 @@ const Dashboard: React.FC = () => {
     return (
       <div className="min-h-screen">
         <Navbar title={getDashboardTitle()} />
-        <div className="p-6">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Vista Global - Todas las Sedes</h1>
-            <p className="text-gray-600">Selecciona una sede para gestionar o ver reportes consolidados</p>
+        <div className="p-4 sm:p-6">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Vista Global - Todas las Sedes</h1>
+            <p className="text-gray-600 text-sm sm:text-base">Selecciona una sede para gestionar o ver reportes consolidados</p>
           </div>
           
           {/* Quick Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                   <Building className="h-5 w-5" />
                   Sedes Activas
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">4</div>
-                <p className="text-sm text-gray-600">Duitama, Sogamoso, Soatá, Socha</p>
+                <div className="text-xl sm:text-2xl font-bold">4</div>
+                <p className="text-xs sm:text-sm text-gray-600">Duitama, Sogamoso, Soatá, Socha</p>
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                   <TrendingUp className="h-5 w-5" />
                   Reportes Consolidados
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <Link to="/reports">
-                  <Button className="w-full">Ver Reportes Globales</Button>
+                  <Button className="w-full text-sm sm:text-base">Ver Reportes Globales</Button>
                 </Link>
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                   <Users className="h-5 w-5" />
                   Gestión Multi-Sede
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <Button 
-                  className="w-full" 
+                  className="w-full text-sm sm:text-base" 
                   onClick={() => setShowBranchSelector(true)}
                 >
                   Gestionar Sedes
@@ -429,21 +429,23 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen">
       <Navbar title={getDashboardTitle()} />
       
-      <div className="p-6 space-y-6 animate-fade-in">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fade-in">
         {/* Branch info for non-student roles */}
         {(isSuperAdmin() || isAdmin()) && selectedBranch && (
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-lg font-semibold">
+          <div className="bg-card rounded-xl p-3 sm:p-4 border border-border">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-base sm:text-lg font-semibold truncate">
                   {isSuperAdmin() ? 'Gestionando:' : 'Sede:'} {selectedBranch.name}
                 </h2>
-                <p className="text-sm text-gray-600">{selectedBranch.address}</p>
+                <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">{selectedBranch.address}</p>
               </div>
               {isSuperAdmin() && (
                 <Button 
                   variant="outline" 
+                  size="sm"
                   onClick={() => setSelectedBranch(null)}
+                  className="w-full sm:w-auto"
                 >
                   Cambiar Sede
                 </Button>
@@ -453,88 +455,100 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <StatCard
-            title="Estudiantes"
-            value={stats.totalStudents}
-            icon={Users}
-            variant="primary"
-          />
-          <StatCard
-            title="Cursos"
-            value={stats.totalCourses}
-            icon={BookOpen}
-            variant="default"
-          />
-          <StatCard
-            title="Inscripciones"
-            value={stats.totalEnrollments}
-            icon={ClipboardList}
-            variant="default"
-          />
-          <StatCard
-            title="Pagos Recibidos"
-            value={stats.totalPayments}
-            icon={DollarSign}
-            variant="success"
-          />
-          <StatCard
-            title="Ingresos Totales"
-            value={`$${stats.totalRevenue.toLocaleString()}`}
-            icon={TrendingUp}
-            variant="success"
-          />
-          <StatCard
-            title="Saldo Pendiente"
-            value={`$${stats.pendingAmount.toLocaleString()}`}
-            icon={AlertCircle}
-            variant="warning"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
+          <div className="sm:col-span-2 lg:col-span-1">
+            <StatCard
+              title="Estudiantes"
+              value={stats.totalStudents}
+              icon={Users}
+              variant="primary"
+            />
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <StatCard
+              title="Cursos"
+              value={stats.totalCourses}
+              icon={BookOpen}
+              variant="default"
+            />
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <StatCard
+              title="Inscripciones"
+              value={stats.totalEnrollments}
+              icon={ClipboardList}
+              variant="default"
+            />
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <StatCard
+              title="Pagos"
+              value={stats.totalPayments}
+              icon={DollarSign}
+              variant="success"
+            />
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <StatCard
+              title="Ingresos"
+              value={`$${stats.totalRevenue.toLocaleString()}`}
+              icon={TrendingUp}
+              variant="success"
+            />
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <StatCard
+              title="Pendiente"
+              value={`$${stats.pendingAmount.toLocaleString()}`}
+              icon={AlertCircle}
+              variant="warning"
+            />
+          </div>
         </div>
 
         {/* Management Modules for admin roles */}
         {(isSuperAdmin() || isAdmin()) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6 text-center">
-                <Users className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <h3 className="font-semibold">Estudiantes</h3>
-                <p className="text-sm text-gray-600 mb-4">Gestión de estudiantes</p>
+              <CardContent className="p-4 sm:p-6 text-center">
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-primary" />
+                <h3 className="font-semibold text-sm sm:text-base">Estudiantes</h3>
+                <p className="text-xs text-gray-600 mb-3 sm:mb-4">Gestión de estudiantes</p>
                 <Link to="/students">
-                  <Button className="w-full">Gestionar</Button>
+                  <Button className="w-full text-xs sm:text-sm">Gestionar</Button>
                 </Link>
               </CardContent>
             </Card>
             
             <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6 text-center">
-                <BookOpen className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                <h3 className="font-semibold">Cursos</h3>
-                <p className="text-sm text-gray-600 mb-4">Gestión de cursos</p>
+              <CardContent className="p-4 sm:p-6 text-center">
+                <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-green-600" />
+                <h3 className="font-semibold text-sm sm:text-base">Cursos</h3>
+                <p className="text-xs text-gray-600 mb-3 sm:mb-4">Gestión de cursos</p>
                 <Link to="/courses">
-                  <Button className="w-full" variant="default">Gestionar</Button>
+                  <Button className="w-full text-xs sm:text-sm" variant="default">Gestionar</Button>
                 </Link>
               </CardContent>
             </Card>
             
             <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6 text-center">
-                <ClipboardList className="h-8 w-8 mx-auto mb-2 text-yellow-600" />
-                <h3 className="font-semibold">Inscripciones</h3>
-                <p className="text-sm text-gray-600 mb-4">Gestión de inscripciones</p>
+              <CardContent className="p-4 sm:p-6 text-center">
+                <ClipboardList className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-yellow-600" />
+                <h3 className="font-semibold text-sm sm:text-base">Inscripciones</h3>
+                <p className="text-xs text-gray-600 mb-3 sm:mb-4">Gestión de inscripciones</p>
                 <Link to="/enrollments">
-                  <Button className="w-full" variant="default">Gestionar</Button>
+                  <Button className="w-full text-xs sm:text-sm" variant="default">Gestionar</Button>
                 </Link>
               </CardContent>
             </Card>
             
             <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6 text-center">
-                <DollarSign className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                <h3 className="font-semibold">Pagos</h3>
-                <p className="text-sm text-gray-600 mb-4">Gestión de pagos</p>
+              <CardContent className="p-4 sm:p-6 text-center">
+                <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-blue-600" />
+                <h3 className="font-semibold text-sm sm:text-base">Pagos</h3>
+                <p className="text-xs text-gray-600 mb-3 sm:mb-4">Gestión de pagos</p>
                 <Link to="/payments">
-                  <Button className="w-full" variant="default">Gestionar</Button>
+                  <Button className="w-full text-xs sm:text-sm" variant="default">Gestionar</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -542,29 +556,33 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Tables Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
           {/* Recent Payments */}
-          <div className="bg-card rounded-xl p-6 border border-border">
-            <h2 className="text-lg font-semibold text-foreground mb-4">
+          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground mb-4">
               Pagos Recientes
             </h2>
-            <DataTable
-              columns={paymentColumns}
-              data={recentPayments}
-              emptyMessage="No hay pagos registrados"
-            />
+            <div className="overflow-x-auto">
+              <DataTable
+                columns={paymentColumns}
+                data={recentPayments}
+                emptyMessage="No hay pagos registrados"
+              />
+            </div>
           </div>
 
           {/* Students with Debt */}
-          <div className="bg-card rounded-xl p-6 border border-border">
-            <h2 className="text-lg font-semibold text-foreground mb-4">
+          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground mb-4">
               Estudiantes con Saldo Pendiente
             </h2>
-            <DataTable
-              columns={debtColumns}
-              data={studentsWithDebt}
-              emptyMessage="No hay estudiantes con deuda"
-            />
+            <div className="overflow-x-auto">
+              <DataTable
+                columns={debtColumns}
+                data={studentsWithDebt}
+                emptyMessage="No hay estudiantes con deuda"
+              />
+            </div>
           </div>
         </div>
       </div>

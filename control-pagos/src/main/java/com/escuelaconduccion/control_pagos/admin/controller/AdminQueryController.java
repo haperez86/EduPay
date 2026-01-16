@@ -31,6 +31,11 @@ public class AdminQueryController {
         return adminQueryService.getStudentsWithDebt();
     }
 
+    @GetMapping("/students/with-debt/{branchId}")
+    public List<StudentDebtDTO> getStudentsWithDebtByBranch(@PathVariable Long branchId) {
+        return adminQueryService.getStudentsWithDebtByBranch(branchId);
+    }
+
     @GetMapping("/courses/{id}/summary")
     public CourseFinancialSummaryDTO getCourseSummary(@PathVariable Long id) {
         return adminQueryService.getCourseSummary(id);

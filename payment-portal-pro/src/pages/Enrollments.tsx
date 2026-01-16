@@ -22,7 +22,9 @@ import { Progress } from '@/components/ui/progress';
 import { useApi } from '@/hooks/useApi';
 import { Enrollment, Student, Course, CreateEnrollmentDTO } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Eye, DollarSign, Calendar, Search, Filter, X } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useBranch } from '@/context/BranchContext';
+import { Plus, Eye, DollarSign, Calendar, Search, Filter, X, Building } from 'lucide-react';
 import { ButtonLoader, PageLoader } from '@/components/ui/LoadingSpinner';
 
 const ITEMS_PER_PAGE = 10;
@@ -30,6 +32,9 @@ const ITEMS_PER_PAGE = 10;
 const Enrollments: React.FC = () => {
   const { get, post } = useApi();
   const { toast } = useToast();
+  const { isSuperAdmin } = useAuth();
+  const branchContext = useBranch();
+  const { branches } = branchContext;
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [filteredEnrollments, setFilteredEnrollments] = useState<Enrollment[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -205,23 +210,79 @@ const Enrollments: React.FC = () => {
       key: 'student',
       header: 'Estudiante',
       render: (enrollment: Enrollment) => (
-        <span className="font-medium">{getStudentName(enrollment.studentId)}</span>
+        <div className="min-w-0">
+          <span className="font-medium block truncate">{getStudentName(enrollment.studentId)}</span>
+        </div>
       ),
     },
+    ...(isSuperAdmin() ? [{
+      key: 'branch',
+      header: 'Sede',
+      render: (enrollment: Enrollment) => {
+        const student = students.find(s => s.id === enrollment.studentId);
+        if (!student) {
+          return (
+            <div className="flex items-center gap-2">
+              <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">Estudiante no encontrado</span>
+            </div>
+          );
+        }
+
+        // Intentar obtener el nombre de la sede desde los datos del estudiante
+        if (student.branch?.name) {
+          return (
+            <div className="flex items-center gap-2">
+              <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{student.branch.name}</span>
+              {student.branch.isMain && (
+                <span className="inline-flex items-center gap-1 px-1 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                  Principal
+                </span>
+              )}
+            </div>
+          );
+        }
+        
+        // Si no hay datos de branch en el estudiante, buscar en BranchContext
+        const branch = branches.find(b => b.id === student.branchId);
+        if (branch) {
+          return (
+            <div className="flex items-center gap-2">
+              <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{branch.name}</span>
+              {branch.isMain && (
+                <span className="inline-flex items-center gap-1 px-1 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                  Principal
+                </span>
+              )}
+            </div>
+          );
+        }
+        
+        // Fallback final
+        return (
+          <div className="flex items-center gap-2">
+            <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <span className="truncate">Sede {student.branchId || 'N/A'}</span>
+          </div>
+        );
+      },
+    }] : []),
     {
       key: 'course',
       header: 'Curso',
       render: (enrollment: Enrollment) => (
-        <span className="badge-info">{getCourseName(enrollment.courseId)}</span>
+        <span className="badge-info truncate block">{getCourseName(enrollment.courseId)}</span>
       ),
     },
     {
       key: 'enrollmentDate',
-      header: 'Fecha Inscripción',
+      header: 'Fecha',
       render: (enrollment: Enrollment) => (
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <Calendar className="w-4 h-4" />
-          {new Date(enrollment.enrollmentDate).toLocaleDateString('es-ES')}
+        <div className="flex items-center gap-1 text-muted-foreground text-sm">
+          <Calendar className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate">{new Date(enrollment.enrollmentDate).toLocaleDateString('es-ES')}</span>
         </div>
       ),
     },
@@ -229,21 +290,21 @@ const Enrollments: React.FC = () => {
       key: 'totalAmount',
       header: 'Total',
       render: (enrollment: Enrollment) => (
-        <span className="font-semibold">${enrollment.totalAmount.toLocaleString()}</span>
+        <span className="font-semibold text-sm">${enrollment.totalAmount.toLocaleString()}</span>
       ),
     },
     {
       key: 'progress',
-      header: 'Progreso de Pago',
+      header: 'Progreso',
       render: (enrollment: Enrollment) => {
         const progress = calculateProgress(enrollment);
         return (
-          <div className="w-32">
+          <div className="w-24 sm:w-32">
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-muted-foreground">
+              <span className="text-muted-foreground truncate">
                 ${enrollment.paidAmount.toLocaleString()}
               </span>
-              <span className="font-medium">{progress}%</span>
+              <span className="font-medium flex-shrink-0">{progress}%</span>
             </div>
             <Progress value={progress} className="h-2" />
           </div>
@@ -256,7 +317,7 @@ const Enrollments: React.FC = () => {
       render: (enrollment: Enrollment) => {
         const pending = enrollment.totalAmount - enrollment.paidAmount;
         return (
-          <span className={pending > 0 ? 'text-warning font-semibold' : 'text-success font-semibold'}>
+          <span className={`${pending > 0 ? 'text-warning' : 'text-success'} font-semibold text-sm`}>
             ${pending.toLocaleString()}
           </span>
         );
@@ -282,7 +343,7 @@ const Enrollments: React.FC = () => {
             e.stopPropagation();
             handleViewDetail(enrollment);
           }}
-          className="text-primary hover:text-primary/80"
+          className="text-primary hover:text-primary/80 p-1 sm:p-2"
         >
           <Eye className="w-4 h-4" />
         </Button>

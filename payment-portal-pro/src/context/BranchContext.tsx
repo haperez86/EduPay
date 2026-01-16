@@ -11,6 +11,9 @@ interface BranchContextType {
   fetchBranches: () => Promise<void>;
   getCurrentBranchId: () => number | null;
   canManageBranches: () => boolean;
+  createBranch: (branch: Omit<Branch, 'id'>) => Promise<Branch>;
+  updateBranch: (id: number, branch: Partial<Branch>) => Promise<Branch>;
+  deleteBranch: (id: number) => Promise<void>;
 }
 
 const BranchContext = createContext<BranchContextType | undefined>(undefined);
@@ -79,9 +82,136 @@ export const BranchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return user?.role === 'SUPER_ADMIN';
   }, [user]);
 
+  const createBranch = useCallback(async (branch: Omit<Branch, 'id'>): Promise<Branch> => {
+    if (!canManageBranches()) {
+      throw new Error('No tienes permisos para crear sedes');
+    }
+
+    // Validar que solo haya una sede principal
+    if (branch.isMain && branches.some(b => b.isMain && b.active)) {
+      throw new Error('Ya existe una sede principal. Solo puede haber una sede principal.');
+    }
+
+    try {
+      const response = await fetchWithAuth('/branches', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(branch),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Error al crear la sede');
+      }
+
+      const newBranch = await response.json();
+      setBranches(prev => [...prev, newBranch]);
+      
+      toast({
+        title: "Sede Creada",
+        description: `La sede "${newBranch.name}" ha sido creada exitosamente.`,
+      });
+
+      return newBranch;
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'No se pudo crear la sede',
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [canManageBranches, branches, fetchWithAuth, toast]);
+
+  const updateBranch = useCallback(async (id: number, branch: Partial<Branch>): Promise<Branch> => {
+    if (!canManageBranches()) {
+      throw new Error('No tienes permisos para editar sedes');
+    }
+
+    // Validar que solo haya una sede principal si se está marcando como principal
+    const currentBranch = branches.find(b => b.id === id);
+    if (branch.isMain && !currentBranch?.isMain && branches.some(b => b.isMain && b.active && b.id !== id)) {
+      throw new Error('Ya existe una sede principal. Solo puede haber una sede principal.');
+    }
+
+    try {
+      const response = await fetchWithAuth(`/branches/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(branch),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Error al actualizar la sede');
+      }
+
+      const updatedBranch = await response.json();
+      setBranches(prev => prev.map(b => b.id === id ? updatedBranch : b));
+      
+      toast({
+        title: "Sede Actualizada",
+        description: `La sede "${updatedBranch.name}" ha sido actualizada exitosamente.`,
+      });
+
+      return updatedBranch;
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'No se pudo actualizar la sede',
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [canManageBranches, branches, fetchWithAuth, toast]);
+
+  const deleteBranch = useCallback(async (id: number): Promise<void> => {
+    if (!canManageBranches()) {
+      throw new Error('No tienes permisos para eliminar sedes');
+    }
+
+    const branchToDelete = branches.find(b => b.id === id);
+    if (!branchToDelete) {
+      throw new Error('Sede no encontrada');
+    }
+
+    try {
+      const response = await fetchWithAuth(`/branches/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar la sede');
+      }
+
+      setBranches(prev => prev.map(b => b.id === id ? { ...b, active: false } : b));
+      
+      toast({
+        title: "Sede Eliminada",
+        description: `La sede "${branchToDelete.name}" ha sido dada de baja exitosamente.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'No se pudo eliminar la sede',
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [canManageBranches, branches, fetchWithAuth, toast]);
+
   useEffect(() => {
     if (user) {
       fetchBranches();
+    } else {
+      // Limpiar estado cuando no hay usuario (logout)
+      setBranches([]);
+      setSelectedBranch(null);
+      setIsLoading(false);
     }
   }, [user, fetchBranches]);
 
@@ -93,6 +223,9 @@ export const BranchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     fetchBranches,
     getCurrentBranchId,
     canManageBranches,
+    createBranch,
+    updateBranch,
+    deleteBranch,
   };
 
   return (

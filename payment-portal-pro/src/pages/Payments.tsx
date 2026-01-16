@@ -31,8 +31,11 @@ import {
 import { useApi } from '@/hooks/useApi';
 import { Payment, Enrollment, Student, Course, CreatePaymentDTO } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Calendar, CreditCard, Banknote, Building, Search, Filter, X } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useBranch } from '@/context/BranchContext';
+import { Plus, Trash2, Calendar, CreditCard, Banknote, Building, Search, Filter, X, DollarSign } from 'lucide-react';
 import { ButtonLoader, PageLoader } from '@/components/ui/LoadingSpinner';
+import { Progress } from '@/components/ui/progress';
 
 interface PaymentMethod {
   id: number;
@@ -44,6 +47,9 @@ const ITEMS_PER_PAGE = 10;
 const Payments: React.FC = () => {
   const { get, post, del } = useApi();
   const { toast } = useToast();
+  const { isSuperAdmin } = useAuth();
+  const branchContext = useBranch();
+  const { branches } = branchContext;
   const [payments, setPayments] = useState<Payment[]>([]);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -261,25 +267,82 @@ const Payments: React.FC = () => {
       key: 'enrollment',
       header: 'Inscripción',
       render: (payment: Payment) => (
-        <span className="font-medium text-sm">
-          {getEnrollmentLabel(payment.enrollmentId)}
-        </span>
+        <div className="min-w-0">
+          <span className="font-medium text-sm block truncate">
+            {getEnrollmentLabel(payment.enrollmentId)}
+          </span>
+        </div>
       ),
     },
+    ...(isSuperAdmin() ? [{
+      key: 'branch',
+      header: 'Sede',
+      render: (payment: Payment) => {
+        const enrollment = enrollments.find(e => e.id === payment.enrollmentId);
+        const student = students.find(s => s.id === enrollment?.studentId);
+        if (!student) {
+          return (
+            <div className="flex items-center gap-2">
+              <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">Estudiante no encontrado</span>
+            </div>
+          );
+        }
+
+        // Intentar obtener el nombre de la sede desde los datos del estudiante
+        if (student.branch?.name) {
+          return (
+            <div className="flex items-center gap-2">
+              <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{student.branch.name}</span>
+              {student.branch.isMain && (
+                <span className="inline-flex items-center gap-1 px-1 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                  Principal
+                </span>
+              )}
+            </div>
+          );
+        }
+        
+        // Si no hay datos de branch en el estudiante, buscar en BranchContext
+        const branch = branches.find(b => b.id === student.branchId);
+        if (branch) {
+          return (
+            <div className="flex items-center gap-2">
+              <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{branch.name}</span>
+              {branch.isMain && (
+                <span className="inline-flex items-center gap-1 px-1 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                  Principal
+                </span>
+              )}
+            </div>
+          );
+        }
+        
+        // Fallback final
+        return (
+          <div className="flex items-center gap-2">
+            <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <span className="truncate">Sede {student.branchId || 'N/A'}</span>
+          </div>
+        );
+      },
+    }] : []),
     {
       key: 'amount',
       header: 'Monto',
       render: (payment: Payment) => (
-        <span className="font-bold text-success">${payment.amount.toLocaleString()}</span>
+        <span className="font-bold text-success text-sm">${payment.amount.toLocaleString()}</span>
       ),
     },
     {
       key: 'paymentDate',
       header: 'Fecha',
       render: (payment: Payment) => (
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <Calendar className="w-4 h-4" />
-          {new Date(payment.paymentDate).toLocaleDateString('es-ES')}
+        <div className="flex items-center gap-1 text-muted-foreground text-sm">
+          <Calendar className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate">{new Date(payment.paymentDate).toLocaleDateString('es-ES')}</span>
         </div>
       ),
     },
@@ -290,8 +353,8 @@ const Payments: React.FC = () => {
         const Icon = getPaymentMethodIcon(payment.paymentMethodName);
         return (
           <div className="flex items-center gap-2">
-            <Icon className="w-4 h-4 text-primary" />
-            <span className="badge-info">{payment.paymentMethodName}</span>
+            <Icon className="w-4 h-4 text-primary flex-shrink-0" />
+            <span className="badge-info truncate">{payment.paymentMethodName}</span>
           </div>
         );
       },
@@ -300,8 +363,12 @@ const Payments: React.FC = () => {
       key: 'type',
       header: 'Tipo',
       render: (payment: Payment) => (
-        <span className={payment.type === 'PAGO_TOTAL' ? 'badge-success' : 'badge-info'}>
-          {payment.type === 'PAGO_TOTAL' ? 'Pago Total' : 'Abono'}
+        <span className={`px-2 py-1 text-xs rounded-full ${
+          payment.type === 'PAGO_TOTAL' 
+            ? 'bg-success text-success-foreground' 
+            : 'bg-primary text-primary-foreground'
+        }`}>
+          {payment.type === 'PAGO_TOTAL' ? 'Total' : 'Abono'}
         </span>
       ),
     },
@@ -309,7 +376,11 @@ const Payments: React.FC = () => {
       key: 'status',
       header: 'Estado',
       render: (payment: Payment) => (
-        <span className={payment.status === 'CONFIRMADO' ? 'badge-success' : 'badge-error'}>
+        <span className={`px-2 py-1 text-xs rounded-full ${
+          payment.status === 'CONFIRMADO' 
+            ? 'bg-green-100 text-green-700' 
+            : 'bg-red-100 text-red-700'
+        }`}>
           {payment.status}
         </span>
       ),
@@ -317,20 +388,18 @@ const Payments: React.FC = () => {
     {
       key: 'actions',
       header: 'Acciones',
-      render: (payment: Payment) =>
-        payment.status === 'CONFIRMADO' && (
+      render: (payment: Payment) => (
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button
             variant="ghost"
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteClick(payment);
-            }}
-            className="text-destructive hover:text-destructive/80"
+            onClick={() => handleDeleteClick(payment)}
+            className="text-destructive hover:text-destructive/80 p-1 sm:p-2"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
-        ),
+        </div>
+      ),
     },
   ];
 
@@ -353,33 +422,33 @@ const Payments: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
-            <h1 className="page-header mb-1">Gestión de Pagos</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Pagos</h1>
+            <p className="text-gray-600 text-sm sm:text-base">
               Registra y administra los pagos y abonos
             </p>
           </div>
-          <Button onClick={handleOpenModal} className="btn-primary gap-2">
+          <Button onClick={handleOpenModal} className="btn-primary gap-2 w-full sm:w-auto">
             <Plus className="w-4 h-4" />
             Registrar Pago
           </Button>
         </div>
 
         {/* Filtros y Búsqueda */}
-        <div className="bg-card rounded-xl p-4 border border-border mb-6 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-card rounded-xl p-3 sm:p-4 border border-border mb-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium">Filtros</span>
+              <span className="font-medium text-sm sm:text-base">Filtros</span>
             </div>
             {(searchTerm || filterType !== 'all' || filterStatus !== 'all' || filterMethod !== 'all') && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-2">
                 <X className="w-4 h-4" />
-                Limpiar filtros
+                <span className="hidden sm:inline">Limpiar</span>
               </Button>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
             {/* Búsqueda */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -387,13 +456,13 @@ const Payments: React.FC = () => {
                 placeholder="Buscar inscripción..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 text-sm"
               />
             </div>
 
             {/* Filtro Tipo */}
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
@@ -405,7 +474,7 @@ const Payments: React.FC = () => {
 
             {/* Filtro Estado */}
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>
@@ -417,7 +486,7 @@ const Payments: React.FC = () => {
 
             {/* Filtro Método */}
             <Select value={filterMethod} onValueChange={setFilterMethod}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Método" />
               </SelectTrigger>
               <SelectContent>
@@ -434,7 +503,7 @@ const Payments: React.FC = () => {
               setSortField(field as 'paymentDate' | 'amount');
               setSortOrder(order as 'asc' | 'desc');
             }}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Ordenar" />
               </SelectTrigger>
               <SelectContent>
@@ -446,25 +515,27 @@ const Payments: React.FC = () => {
             </Select>
           </div>
 
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs sm:text-sm text-muted-foreground">
             Mostrando {paginatedPayments.length} de {filteredPayments.length} pagos
           </div>
         </div>
 
         {/* Table */}
-        <DataTable
-          columns={columns}
-          data={paginatedPayments}
-          emptyMessage="No hay pagos registrados"
-        />
+        <div className="overflow-x-auto">
+          <DataTable
+            columns={columns}
+            data={paginatedPayments}
+            emptyMessage="No hay pagos registrados"
+          />
+        </div>
 
         {/* Paginación */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6">
+            <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
               Página {currentPage} de {totalPages}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 justify-center sm:justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -488,21 +559,21 @@ const Payments: React.FC = () => {
 
       {/* Create Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Registrar Pago</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">Registrar Pago</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-4 py-4 px-1">
               <div className="space-y-2">
-                <Label>Inscripción</Label>
+                <Label htmlFor="enrollmentId" className="text-sm font-medium">Inscripción</Label>
                 <Select
                   value={formData.enrollmentId ? formData.enrollmentId.toString() : ''}
                   onValueChange={(value) =>
                     setFormData({ ...formData, enrollmentId: parseInt(value) })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm">
                     <SelectValue placeholder="Selecciona una inscripción" />
                   </SelectTrigger>
                   <SelectContent>
@@ -512,8 +583,8 @@ const Payments: React.FC = () => {
                       const pending = enrollment.totalAmount - enrollment.paidAmount;
                       return (
                         <SelectItem key={enrollment.id} value={enrollment.id.toString()}>
-                          <div className="flex flex-col">
-                            <span>
+                          <div className="flex flex-col gap-1 py-1">
+                            <span className="font-medium truncate">
                               {student?.firstName} {student?.lastName} - {course?.name}
                             </span>
                             <span className="text-xs text-muted-foreground">
@@ -527,21 +598,56 @@ const Payments: React.FC = () => {
                 </Select>
               </div>
               
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="amount" className="text-sm font-medium">Monto</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.amount || ''}
+                    onChange={(e) =>
+                      setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })
+                    }
+                    className="text-sm"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="paymentMethodId" className="text-sm font-medium">Método de Pago</Label>
+                  <Select
+                    value={formData.paymentMethodId ? formData.paymentMethodId.toString() : ''}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, paymentMethodId: parseInt(value) })
+                    }
+                  >
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Selecciona método" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.map((method) => (
+                        <SelectItem key={method.id} value={method.id.toString()}>
+                          {method.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
               <div className="space-y-2">
-                <Label>Tipo de Pago</Label>
+                <Label htmlFor="type" className="text-sm font-medium">Tipo de Pago</Label>
                 <Select
                   value={formData.type}
-                  onValueChange={(value) => {
-                    const newType = value as 'ABONO' | 'PAGO_TOTAL';
-                    setFormData({
-                      ...formData,
-                      type: newType,
-                      amount: newType === 'PAGO_TOTAL' ? pendingAmount : 0,
-                    });
-                  }}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, type: value as 'ABONO' | 'PAGO_TOTAL' })
+                  }
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Selecciona tipo" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ABONO">Abono</SelectItem>
@@ -549,57 +655,61 @@ const Payments: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="amount">Monto ($)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={formData.amount || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })
-                  }
-                  disabled={formData.type === 'PAGO_TOTAL'}
-                  required
-                />
-                {formData.type === 'PAGO_TOTAL' && (
-                  <p className="text-xs text-muted-foreground">
-                    Monto bloqueado: saldo pendiente de ${pendingAmount.toLocaleString()}
-                  </p>
-                )}
+              
+              {selectedEnrollment && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100">Resumen de Inscripción</h4>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg border border-blue-100 dark:border-blue-800">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                    <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                      ${selectedEnrollment.totalAmount.toLocaleString()}
+                    </div>
+                  </div>
+                  
+                  <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg border border-green-100 dark:border-green-800">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pagado</div>
+                    <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                      ${selectedEnrollment.paidAmount.toLocaleString()}
+                    </div>
+                  </div>
+                  
+                  <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg border border-orange-100 dark:border-orange-800">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pendiente</div>
+                    <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                      ${(selectedEnrollment.totalAmount - selectedEnrollment.paidAmount).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-blue-100 dark:border-blue-800">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Progreso de pago</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 sm:w-32">
+                      <Progress 
+                        value={(selectedEnrollment.paidAmount / selectedEnrollment.totalAmount) * 100} 
+                        className="h-2" 
+                      />
+                    </div>
+                    <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 min-w-[3rem] text-right">
+                      {Math.round((selectedEnrollment.paidAmount / selectedEnrollment.totalAmount) * 100)}%
+                    </span>
+                  </div>
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <Label>Método de Pago</Label>
-                <Select
-                  value={formData.paymentMethodId?.toString()}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      paymentMethodId: parseInt(value),
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map((method) => (
-                      <SelectItem key={method.id} value={method.id.toString()}>
-                        {method.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            )}
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseModal}>
+            <DialogFooter className="flex flex-col sm:flex-row gap-3">
+              <Button type="button" variant="outline" onClick={handleCloseModal} className="w-full sm:w-auto">
                 Cancelar
               </Button>
-              <Button type="submit" className="btn-primary" disabled={isSubmitting}>
+              <Button type="submit" className="btn-primary w-full sm:w-auto" disabled={isSubmitting}>
                 {isSubmitting ? <ButtonLoader /> : 'Registrar Pago'}
               </Button>
             </DialogFooter>
@@ -618,12 +728,9 @@ const Payments: React.FC = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>No, mantener</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="btn-destructive"
-            >
-              Sí, cancelar pago
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Confirmar Cancelación
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

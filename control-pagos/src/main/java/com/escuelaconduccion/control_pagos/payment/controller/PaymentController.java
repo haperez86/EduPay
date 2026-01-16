@@ -22,12 +22,26 @@ public class PaymentController {
 
     @PostMapping
     public PaymentResponseDTO registerPayment(@Valid @RequestBody PaymentRequestDTO request) {
-        return paymentService.registerPayment(request);
+        System.out.println("=== DEBUG PaymentController.registerPayment ===");
+        System.out.println("EnrollmentId: " + request.getEnrollmentId());
+        System.out.println("Amount: " + request.getAmount());
+        System.out.println("PaymentMethodId: " + request.getPaymentMethodId());
+        System.out.println("Type: " + request.getType());
+        System.out.println("=== INICIANDO REGISTRO DE PAGO ===");
+        
+        PaymentResponseDTO response = paymentService.registerPayment(request);
+        
+        System.out.println("Pago registrado exitosamente - ID: " + response.getId());
+        System.out.println("=== FIN DEBUG PaymentController.registerPayment ===");
+        
+        return response;
     }
 
     @GetMapping
-    public List<PaymentResponseDTO> getAllPayments() {
-        return paymentService.getAllPayments();
+    public List<PaymentResponseDTO> getAllPayments(
+            @RequestParam(required = false) Long branchId  // Solo para SUPER_ADMIN
+    ) {
+        return paymentService.getAllPayments(branchId);
     }
 
     @GetMapping("/enrollment/{enrollmentId}")

@@ -1,5 +1,7 @@
 package com.escuelaconduccion.control_pagos.payment.service;
 
+import com.escuelaconduccion.control_pagos.auth.model.User;
+import com.escuelaconduccion.control_pagos.auth.repository.UserRepository;
 import com.escuelaconduccion.control_pagos.enrollment.model.Enrollment;
 import com.escuelaconduccion.control_pagos.enrollment.repository.EnrollmentRepository;
 import com.escuelaconduccion.control_pagos.payment.dto.PaymentRequestDTO;
@@ -10,6 +12,9 @@ import com.escuelaconduccion.control_pagos.payment.model.PaymentStatus;
 import com.escuelaconduccion.control_pagos.payment.model.PaymentType;
 import com.escuelaconduccion.control_pagos.payment.repository.PaymentMethodRepository;
 import com.escuelaconduccion.control_pagos.payment.repository.PaymentRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +32,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final PaymentMethodRepository paymentMethodRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public PaymentResponseDTO registerPayment(PaymentRequestDTO request) {
@@ -66,6 +73,7 @@ public class PaymentService {
                 .status(PaymentStatus.CONFIRMADO)
                 .enrollment(enrollment)
                 .paymentMethod(method)
+                .branch(enrollment.getBranch())
                 .build();
 
         Payment saved = paymentRepository.save(payment);
@@ -125,11 +133,70 @@ public class PaymentService {
 
         payment.setStatus(PaymentStatus.ANULADO);
         paymentRepository.save(payment);
-        }
+    }
 
-        @Transactional(readOnly = true)
-        public List<PaymentResponseDTO> getAllPayments() {
-        List<Payment> payments = paymentRepository.findAllWithMethod(); // O usa findAll()
+    @Transactional(readOnly = true)
+    public List<PaymentResponseDTO> getAllPayments(Long branchId) {
+        // Obtener usuario autenticado
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userRepository.findByUsernameAndActiveTrueWithBranch(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        
+        System.out.println("=== DEBUG PaymentService.getAllPayments ===");
+        System.out.println("Usuario: " + currentUser.getUsername());
+        System.out.println("Rol: " + currentUser.getRole());
+        System.out.println("BranchId Usuario: " + (currentUser.getBranch() != null ? currentUser.getBranch().getId() : "null"));
+        System.out.println("BranchId Parámetro: " + branchId);
+        
+        List<Payment> payments;
+        Long filterBranchId = null;
+        
+        if (currentUser.getRole().equals("SUPER_ADMIN")) {
+            // SUPER_ADMIN puede ver todos los pagos o filtrar por una sede específica
+            if (branchId != null) {
+                filterBranchId = branchId;
+                System.out.println("SUPER_ADMIN detectado, filtrando por branchId parámetro: " + filterBranchId);
+            } else {
+                System.out.println("SUPER_ADMIN detectado, sin filtro de sede (mostrando todos)");
+            }
+        } else {
+            // ADMIN solo ve pagos de su sede (ignorar parámetro branchId)
+            Long filterBranchIdFromUser = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
+            if (filterBranchIdFromUser != null) {
+                filterBranchId = filterBranchIdFromUser;
+                System.out.println("ADMIN detectado, filtrando por sede asignada: " + filterBranchId);
+            } else {
+                payments = new ArrayList<>(); // Usuario sin sede asignada
+                System.out.println("ADMIN sin sede asignada, devolviendo lista vacía");
+                System.out.println("=== FIN DEBUG PaymentService.getAllPayments ===");
+                return payments.stream()
+                        .map(p -> PaymentResponseDTO.builder()
+                                .id(p.getId())
+                                .amount(p.getAmount())
+                                .paymentDate(p.getPaymentDate())
+                                .status(p.getStatus())
+                                .type(p.getType())
+                                .enrollmentId(p.getEnrollment().getId())
+                                .paymentMethodId(p.getPaymentMethod().getId())
+                                .paymentMethodName(p.getPaymentMethod().getName())
+                                .build())
+                        .toList();
+            }
+        }
+        
+        if (filterBranchId == null) {
+            // Si no hay un branchId específico (SUPER_ADMIN sin filtro), obtener todos
+            payments = paymentRepository.findAllWithBranch();
+            System.out.println("Pagos encontrados (todos): " + payments.size());
+        } else {
+            // Filtrar por sede específica
+            payments = paymentRepository.findByBranchIdWithBranch(filterBranchId);
+            System.out.println("Pagos encontrados por sede " + filterBranchId + ": " + payments.size());
+        }
+        
+        System.out.println("Total pagos a devolver: " + payments.size());
+        System.out.println("=== FIN DEBUG PaymentService.getAllPayments ===");
         
         return payments.stream()
                 .map(p -> PaymentResponseDTO.builder()
@@ -140,8 +207,8 @@ public class PaymentService {
                         .type(p.getType())
                         .enrollmentId(p.getEnrollment().getId())
                         .paymentMethodId(p.getPaymentMethod().getId())
-                        .paymentMethodName(p.getPaymentMethod().getName()) // ASEGÚRATE QUE ESTÉ AQUÍ
+                        .paymentMethodName(p.getPaymentMethod().getName())
                         .build())
                 .toList();
-        }
+    }
 }

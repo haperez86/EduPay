@@ -27,7 +27,7 @@ export const BranchSelector: React.FC<BranchSelectorProps> = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4 sm:p-0">
       {showBackButton && onBack && (
         <Button variant="outline" onClick={onBack} className="mb-4">
           ← Volver a Vista Global
@@ -35,11 +35,11 @@ export const BranchSelector: React.FC<BranchSelectorProps> = ({
       )}
       
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Seleccionar Sede</h2>
-        <p className="text-gray-600 mt-2">Elige una sede para gestionar</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Seleccionar Sede</h2>
+        <p className="text-gray-600 mt-2 text-sm sm:text-base">Elige una sede para gestionar</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {branches.map((branch) => (
           <BranchCard
             key={branch.id}
@@ -70,38 +70,44 @@ const BranchCard: React.FC<BranchCardProps> = ({ branch, isSelected, onSelect })
       onClick={onSelect}
     >
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{branch.name}</CardTitle>
-          <Badge variant="secondary">{branch.code}</Badge>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+          <CardTitle className="text-base sm:text-lg truncate">{branch.name}</CardTitle>
+          <Badge variant="secondary" className="w-fit">{branch.code}</Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="text-sm text-gray-600">
-          <p className="flex items-center gap-2">
-            <span className="font-medium">Dirección:</span>
-            {branch.address}
-          </p>
-          <p className="flex items-center gap-2">
-            <span className="font-medium">Teléfono:</span>
-            {branch.phone}
-          </p>
-          <p className="flex items-center gap-2">
-            <span className="font-medium">Email:</span>
-            {branch.email}
-          </p>
+      <CardContent className="space-y-3">
+        <div className="text-sm text-gray-600 space-y-2">
+          {branch.address && (
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-xs flex-shrink-0">Dirección:</span>
+              <span className="line-clamp-2 leading-tight">{branch.address}</span>
+            </div>
+          )}
+          {branch.phone && (
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-xs flex-shrink-0">Teléfono:</span>
+              <span className="truncate">{branch.phone}</span>
+            </div>
+          )}
+          {branch.email && (
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-xs flex-shrink-0">Email:</span>
+              <span className="truncate">{branch.email}</span>
+            </div>
+          )}
         </div>
         
         {branch.isMain && (
-          <div className="mt-3">
-            <Badge variant="default" className="w-full justify-center">
+          <div className="mt-2">
+            <Badge variant="default" className="w-full justify-center text-xs">
               Sede Principal
             </Badge>
           </div>
         )}
         
         {isSelected && (
-          <div className="mt-3">
-            <div className="w-full bg-primary text-primary-foreground rounded px-3 py-1 text-center text-sm">
+          <div className="mt-2">
+            <div className="w-full bg-primary text-primary-foreground rounded px-3 py-1.5 text-center text-xs sm:text-sm">
               Seleccionada
             </div>
           </div>

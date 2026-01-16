@@ -33,4 +33,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Query("SELECT p FROM Payment p JOIN FETCH p.paymentMethod JOIN FETCH p.enrollment")
     List<Payment> findAllWithMethod();
+
+    // Métodos para filtrar por sede
+    @Query("SELECT p FROM Payment p JOIN FETCH p.paymentMethod JOIN FETCH p.enrollment JOIN FETCH p.branch WHERE p.branch.id = :branchId")
+    List<Payment> findByBranchIdWithBranch(Long branchId);
+
+    @Query("SELECT p FROM Payment p JOIN FETCH p.paymentMethod JOIN FETCH p.enrollment JOIN FETCH p.branch ORDER BY p.paymentDate DESC")
+    List<Payment> findAllWithBranch();
 }

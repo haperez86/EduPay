@@ -130,6 +130,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       title: "Sesión cerrada",
       description: "Has cerrado sesión correctamente",
     });
+    // Redirigir a login después de un breve retraso para mostrar el toast
+    setTimeout(() => {
+      window.location.href = '/login';
+    }, 1000);
   }, [toast]);
 
   const fetchWithAuth = useCallback(async (endpoint: string, options: RequestInit = {}) => {

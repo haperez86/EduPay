@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,8 +27,10 @@ public class EnrollmentController {
     }
 
     @GetMapping
-    public List<EnrollmentResponseDTO> getAllEnrollments() {
-        return enrollmentService.getAllEnrollments();
+    public List<EnrollmentResponseDTO> getAllEnrollments(
+            @RequestParam(required = false) Long branchId  // Solo para SUPER_ADMIN
+    ) {
+        return enrollmentService.getAllEnrollments(branchId);
     }
 
     @GetMapping("/{id}")

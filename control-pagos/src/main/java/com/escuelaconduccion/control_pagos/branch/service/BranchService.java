@@ -40,12 +40,27 @@ public class BranchService {
         if (branchRepository.existsByCode(branch.getCode())) {
             throw new IllegalArgumentException("Branch code already exists: " + branch.getCode());
         }
+        
+        // Validar que solo haya una sede principal
+        if (branch.getIsMain() != null && branch.getIsMain()) {
+            if (branchRepository.findByIsMainTrueAndActiveTrue().isPresent()) {
+                throw new IllegalArgumentException("Ya existe una sede principal. Solo puede haber una sede principal.");
+            }
+        }
+        
         return branchRepository.save(branch);
     }
 
     public Branch updateBranch(Long id, Branch branchDetails) {
         return branchRepository.findById(id)
                 .map(branch -> {
+                    // Validar que solo haya una sede principal si se está marcando como principal
+                    if (branchDetails.getIsMain() != null && branchDetails.getIsMain() && !branch.getIsMain()) {
+                        if (branchRepository.findByIsMainTrueAndActiveTrue().isPresent()) {
+                            throw new IllegalArgumentException("Ya existe una sede principal. Solo puede haber una sede principal.");
+                        }
+                    }
+                    
                     branch.setName(branchDetails.getName());
                     branch.setAddress(branchDetails.getAddress());
                     branch.setPhone(branchDetails.getPhone());

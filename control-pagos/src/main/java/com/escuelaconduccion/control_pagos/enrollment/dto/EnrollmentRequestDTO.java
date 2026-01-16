@@ -19,4 +19,6 @@ public class EnrollmentRequestDTO {
     @NotNull
     private Long courseId;
 
+    private Long branchId; // Opcional, para SUPER_ADMIN
+
 }
